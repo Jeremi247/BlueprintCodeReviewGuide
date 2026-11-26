@@ -1,0 +1,71 @@
+name: Bug report
+description: The text is wrong or missing something, or a menu, button or diff fails.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are public. Paste only what you are free to share: cut a Blueprint's text down to the lines that show the problem, and rename anything confidential.
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine version
+      options:
+        - "4.27"
+        - "5.8"
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Edit › Plugins, under Blueprint Pseudocode.
+      placeholder: "1.0"
+  - type: dropdown
+    id: asset
+    attributes:
+      label: Asset
+      options:
+        - Blueprint
+        - Widget Blueprint
+        - Animation Blueprint
+        - String table
+        - StateTree
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      multiple: true
+      options:
+        - P4V diff (Ctrl+D)
+        - "Editor: Export to File or Copy to Clipboard"
+        - "Editor: Diff Against Depot"
+        - "Editor: Pseudocode Diff in a diff window"
+        - Command line (BlueprintReader.py)
+        - Commandlet (-run=BlueprintPseudocode)
+        - P4 Code Review (Swarm)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead. A screenshot of the graph helps.
+    validations:
+      required: true
+  - type: textarea
+    id: text
+    attributes:
+      label: The text
+      description: The lines that are wrong, with any `//` notes above the header line.
+      render: text
+  - type: textarea
+    id: errors
+    attributes:
+      label: Errors
+      description: Any error from the Output Log, P4V, the command line or Swarm's log.
+      render: text

@@ -1,0 +1,25 @@
+name: Feature request
+description: A node, asset or tool the plugin should cover, or a change to how the text reads.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you are trying to do
+      description: What you review or diff, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: How it could work. For a change to the text, show the lines as they read now and as you would like them to read.
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine version
+      multiple: true
+      options:
+        - "4.27"
+        - "5.8"
+        - Other
