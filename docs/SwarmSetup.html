@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swarm setup · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Blueprint pseudocode in P4 Code Review</h1>
+      <p class="lede">Set up P4 Code Review (Swarm) so a changed <code>.uasset</code> in a review shows as pseudocode: side by side or in-line, with comments on its lines, like any text file. You set it up once, on the Swarm server.</p>
+    </header>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="need">What you need</h2>
+        <p>This was set up and checked on one combination. Anything else is untried.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3>Checked on</h3>
+          <ul>
+            <li>P4 Code Review 2026.4, build 3138518, in its Docker image</li>
+            <li>Helix Core server 2023.1 (case-insensitive)</li>
+            <li>Unreal Engine 5.8 content</li>
+          </ul>
+        </div>
+        <div class="step">
+          <h3>On the Swarm host</h3>
+          <ul>
+            <li>Swarm running on x86-64 Linux with glibc 2.31 or later (not Alpine)</li>
+            <li>Nothing else: no <code>p4</code> command line, <code>cron</code> or <code>flock</code>, and no Perforce workspace. The module reads your project from Perforce itself, as Swarm's admin user</li>
+            <li>Optional: a folder for the project's generated data, to keep it on the host instead of in Perforce</li>
+            <li>Optional: about 7 GB for a copy of the engine's content</li>
+          </ul>
+        </div>
+        <div class="step">
+          <h3>On a Windows machine</h3>
+          <ul>
+            <li>Your project's editor, to write the project's generated data: its metadata table and an archive of a few MB (4 MB for UE 5.8 with its default plugins) of the engine files the plugin reads. No engine install is needed on the Swarm host</li>
+            <li>Optional: the engine install, to copy the engine's content</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="install">Install</h2>
+      </div>
+      <div class="steps one">
+        <div class="step">
+          <h3>1. Copy the tools</h3>
+          <p>Copy the plugin's <code>Tools</code> folder (see <a href="GettingText.html#plugin-folder">where the plugin is</a>) to the Swarm host as <code>/opt/bp-tools</code>, and make <code>BlueprintReaderLinux</code> and <code>Swarm/ConvertBlueprint.sh</code> executable. Run as Swarm's web server user, <code>/opt/bp-tools/BlueprintReaderLinux</code> prints its usage and exits with an error.</p>
+          <p>The plugin ships the reader's source. To build <code>BlueprintReaderLinux</code> yourself, run <code>sh Tools/BlueprintReader/BuildLinux.sh</code> in a copy of the whole plugin folder on a Linux machine with g++, then copy its <code>Tools</code> folder.</p>
+        </div>
+        <div class="step">
+          <h3>2. Add the module to Swarm</h3>
+          <p>In Swarm's folder (<code>/opt/perforce/swarm</code> in its packages and its Docker image), place <code>/opt/bp-tools/Swarm/BinaryTextDiff</code> as <code>module/BinaryTextDiff</code>, and <code>/opt/bp-tools/Swarm/CustomModules.php</code> as <code>config/custom.modules.config.php</code>; a copy or a link. If Swarm already has that file, add <code>'BinaryTextDiff'</code> to its list instead. Swarm's own files are not changed.</p>
+          <p>Docker example: in Swarm's Docker image, the converter runs inside the container, so mount <code>/opt/bp-tools</code> too, read-only, for example in a compose override, then recreate the container:</p>
+          <pre class="code">services:
+  swarm:
+    volumes:
+      - /opt/bp-tools:/opt/bp-tools:ro
+      - /opt/bp-tools/Swarm/BinaryTextDiff:/opt/perforce/swarm/module/BinaryTextDiff:ro
+      - /opt/bp-tools/Swarm/CustomModules.php:/opt/perforce/swarm/config/custom.modules.config.php:ro</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="configure">Configure</h2>
+      </div>
+      <div class="steps one">
+        <div class="step">
+          <h3>1. Swarm's config</h3>
+          <p>Merge the <code>binary_text_diff</code> block of <code>Swarm/SwarmConfigExample.php</code> into Swarm's <code>data/config.php</code>. It names the converter, sets a 50 MB limit (a bigger file shows a stub instead) and holds a <code>context</code> block: with it, the module reads your project's config, generated data and referenced assets from Perforce, at the revision of the review. Leave <code>'engine' =&gt; null</code>: the project's engine archive then stands in for the engine (<a href="#engine">below</a>).</p>
+        </div>
+        <div class="step">
+          <h3>2. Reload the configuration</h3>
+          <p>Swarm caches its configuration: reload it, with Reload Configuration on Swarm's System Information page. Do the same after every later change to the config. In Docker, recreating the container also reloads it.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="metadata">The project's generated data</h2>
+        <p>The module finds a Blueprint's project as the nearest folder above it in the depot that holds a <code>.uproject</code>. The project's editor writes two files to <code>Saved/BlueprintPseudocode/GeneratedData</code> each time it starts. <code>Metadata-Project.tsv</code> is what lets the text name your C++ classes, calls and values. <code>EngineContext.tar</code> holds the engine files the plugin reads, so the Swarm host needs no engine: the engine's version and config, and its enums, structs and macro libraries, such as <code>ForEachLoop</code>'s. The editor writes the archive once it has scanned your assets, a little after it starts. Keep both in the depot, or on the host and name them with <code>-Metadata</code>.</p>
+      </div>
+      <div class="steps one">
+        <div class="step">
+          <h3>In the depot</h3>
+          <p>Submit the two files as <code>&lt;Project&gt;/Build/BlueprintPseudocode/Metadata-Project.tsv</code> and <code>&lt;Project&gt;/Build/BlueprintPseudocode/EngineContext.tar</code>, with <code>&lt;Project&gt;</code> the folder that holds the <code>.uproject</code>. The module reads both at each revision of a review and places them under <code>Saved</code> for the reader. Submit them again after C++ changes and after an engine update. Installing the module is then the only step on the Swarm host: no engine copy and no <code>'engine'</code> setting.</p>
+          <p>A revision from before their first submit reads without them, so a Blueprint's first review after it also shows the lines they change, such as the note that the engine was not found.</p>
+          <p>On a build machine, <code>Tools/BlueprintReader.py -GenerateMetadata</code> writes both files without opening the editor window, once your C++ is built (see <a href="FileLayout.html#notes-at-the-top">notes at the top</a>). A build step can run it and submit the files that changed.</p>
+          <p class="note">Without the table, calls and values of your C++ read incomplete, and each class, function, enum or struct the table would hold is noted at the top of the text. If the depot also holds your project's <code>Binaries/Win64/*.modules</code>, every text in the project also opens with the note that the project has no metadata. Without the archive, and with no engine named, every text opens with <code>// The engine was not found</code>.</p>
+        </div>
+        <div class="step">
+          <h3>On the host, with -Metadata</h3>
+          <p>For a pipeline that keeps the files out of the depot, copy the whole <code>GeneratedData</code> folder to the Swarm host, for example as <code>/srv/bp-context/GeneratedData</code>, and name it in the converter's <code>command</code> in Swarm's config, after <code>'{file}'</code>:</p>
+          <pre class="code">'command' =&gt; ['/opt/bp-tools/Swarm/ConvertBlueprint.sh', '{file}',
+              '-Metadata=/srv/bp-context/GeneratedData'],</pre>
+          <p>Reload the configuration as in <a href="#configure">Configure</a>. The shipped engine tables still load. Each time your pipeline replaces the folder's files, delete the <code>.txt</code> files in <code>data/cache/binarytextdiff</code>: a converted text is cached by the command, not by the folder's content.</p>
+          <p>Docker example: mount <code>/srv/bp-context</code> into the container too, read-only, next to the others in <a href="#install">Install</a>: <code>- /srv/bp-context:/srv/bp-context:ro</code>.</p>
+          <p class="note">Every revision, an old or a shelved one too, then reads the host's copy, and the files in the depot are not used.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="check">Check</h2>
+        <p>Shelve a change to a Blueprint with <code>#review</code> in its description, then open the review.</p>
+      </div>
+      <div class="steps one">
+        <div class="step">
+          <ul>
+            <li>The file shows a text diff of pseudocode, side by side or in-line (<span class="kbd">Alt</span>+<span class="kbd">L</span>)</li>
+            <li>Clicking a line opens the comment box, and the comment stays on that line</li>
+            <li>The arrows above and below a hunk show more pseudocode, not blank lines</li>
+          </ul>
+          <p>If the file still shows as binary, the module is off: check that Swarm sees the module (<a href="#install">Install</a>), the <code>binary_text_diff</code> block, and that the configuration was reloaded.</p>
+          <p>A stub that says the file <em>could not be converted</em> is not cached: fix the cause and reload. Its detail is in <code>data/log</code>, as <code>BinaryTextDiff: conversion failed</code>. Every other text, a <em>could not read</em> stub included, stays cached; to see a fix, delete the <code>.txt</code> files in <code>data/cache/binarytextdiff</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="update">Update</h2>
+        <p>Copy the new plugin's <code>Tools</code> folder over <code>/opt/bp-tools</code>, and over the module if you copied it into Swarm. Make its programs executable again and reload the configuration. A release that prints Blueprints differently converts each text again on its next view, so comments on open reviews can move (<a href="#limits">below</a>).</p>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="engine">Engine content (optional)</h2>
+        <p>The project's engine archive already covers the engine's enums, structs and macro libraries, and its renamed functions. What it lacks is the engine's Blueprints: one your Blueprint uses as a parent, an interface or a function library reads as if its file were missing, so that part prints as the file holds it, with no note in the text, and a warning in Swarm's log that appears only at <code>log.priority</code> 4 or higher. To read them, copy the engine's content to the host, or name a depot folder that holds it. The archive is then not used.</p>
+      </div>
+      <div class="steps one">
+        <div class="step">
+          <h3>1. Export it on Windows</h3>
+          <pre class="code">powershell -ExecutionPolicy Bypass -File "&lt;plugin folder&gt;\Tools\Swarm\ExportEngineContext.ps1" -Engine "C:\Program Files\Epic Games\UE_5.8" -Out D:\engine-context</pre>
+          <p>It copies the engine's version file, config, content and plugin descriptors under <code>-Out</code>: for 5.8, about 17,000 files and 7 GB.</p>
+        </div>
+        <div class="step">
+          <h3>2. Copy it to the host</h3>
+          <p>Copy the folder to the Swarm host, for example as <code>/srv/bp-context/engine</code>, so that <code>Engine</code> sits directly under it. Copy it again after an engine update.</p>
+        </div>
+        <div class="step">
+          <h3>3. Name it</h3>
+          <p>In the <code>context</code> block of the config, set <code>'engine' =&gt; '/srv/bp-context/engine'</code>, and reload the configuration as in <a href="#configure">Configure</a>. Whenever you replace the copy, delete the <code>.txt</code> files in <code>data/cache/binarytextdiff</code>: a converted text is cached by the folder's path, not its content.</p>
+          <p>Docker example: mount <code>/srv/bp-context</code> into the container, read-only, as for <a href="#metadata">the generated data</a>.</p>
+          <p class="note">If your depot holds the engine, skip steps 1 and 2: set <code>'engine'</code> to the depot folder that holds <code>Engine/</code>, for example <code>'//depot/UE5/'</code>, and reload the configuration. The module reads the engine's files from Perforce, as it reads your project's. A revision from before the engine's first submit reads as if no engine were named.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="shows">What a review shows</h2>
+        <p>Every <code>.uasset</code> shows text. When it is not the text of a Blueprint, string table or StateTree, it is a stub that says why, with the file's size and a hash, so two different files never look the same.</p>
+      </div>
+      <div class="tablewrap">
+        <table class="ref">
+          <thead><tr><th>The file is</th><th>The text is</th></tr></thead>
+          <tbody>
+            <tr><td>A Blueprint, string table or StateTree</td><td>The pseudocode; all of it added or deleted when the file is</td></tr>
+            <tr><td>Another asset (a texture, a sound, a data asset)</td><td><code>// Unsupported type: not a Blueprint, string table or StateTree</code>, then its size and SHA-1</td></tr>
+            <tr><td>Over the size limit</td><td><code>// Unsupported: &lt;n&gt; bytes, over the converter's limit</code>, then the server's digest of the file</td></tr>
+            <tr><td>Not readable, or in no project (no <code>.uproject</code> in a folder above it)</td><td><code>// BlueprintPseudocode could not read this file:</code> and the reason, such as <code>no project: no .uproject in a folder above '&lt;folder&gt;/'</code>, then its size and SHA-1</td></tr>
+            <tr><td>Not converted: the converter could not start, timed out, failed or printed nothing</td><td><code>// BlueprintPseudocode could not convert this file:</code> and the reason, then its size and SHA-1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="limits">Limits</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3>References are read at each revision</h3>
+          <p>A Blueprint's config, metadata table, engine archive and referenced assets come from Perforce as they were at the revision shown, so each side of a diff reads its own. For a shelved file, the shelf's own files are read from the shelf and every other file as submitted at the shelf's change number, not as its author has them. A table and archive named with <code>-Metadata</code> are the host's, the same for every revision.</p>
+        </div>
+        <div class="step">
+          <h3>The engine archive is as old as its last submit</h3>
+          <p>The archive holds the engine as it was when the editor last wrote it. After an engine update, or a change to your engine plugins, submit it again; revisions from before keep the archive they had. Engine Blueprints are not in it (<a href="#engine">above</a>).</p>
+        </div>
+        <div class="step">
+          <h3>The first view is slower</h3>
+          <p>A revision's first view fetches its files from Perforce and runs the reader again for each batch of references it finds, within the converter's <code>timeout</code>. Later views come from the cache.</p>
+        </div>
+        <div class="step">
+          <h3>Read as Swarm's admin user</h3>
+          <p>A review can show pseudocode built from files its reviewers cannot open themselves, and a converted text is shared by everyone who views it. On a case-sensitive server, which is untried, an asset whose reference spells its path in another case than the depot is not read.</p>
+        </div>
+        <div class="step">
+          <h3>Notes on both sides</h3>
+          <p>Each revision is converted alone, so a note at the top of the text, such as a missing table, appears on both sides and diffs to nothing.</p>
+        </div>
+        <div class="step">
+          <h3>Comments follow line numbers</h3>
+          <p>A comment is tied to a line of the converted text. When a plugin update changes how a Blueprint reads, comments on open reviews can move.</p>
+        </div>
+        <div class="step">
+          <h3>Swarm upgrades</h3>
+          <p>The module replaces parts of Swarm's file handling. After a Swarm upgrade, check a Blueprint review as above. Swarm's old (non-React) diff page and its <code>?lines=</code> and annotate views do not show pseudocode.</p>
+        </div>
+        <div class="step">
+          <h3>The caches grow</h3>
+          <p>Converted texts in <code>data/cache/binarytextdiff</code>, and the files fetched from Perforce in its <code>files</code> folder, are never removed. Delete them to reclaim the space; they are made again on the next view.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>

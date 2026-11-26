@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comments and dead code · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Comments and dead code</h1>
+      <p class="lede">Comment text from the graph is kept, so reviewers see what the author wrote next to the logic.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="comment-boxes">Comment boxes and node comments</h2>
+        <p>A comment box is printed as <code>// [text]</code> right before the first node inside it that the execution reaches. A comment on a single node (the speech bubble) goes at the end of that node's line. A comment box around no written node, such as one around pure nodes, unreachable nodes or empty space, is listed at the end of its graph.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="comments"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnHit(float Amount)
+    // [Damage handling]
+    Health = Health - Amount  // clamp later?</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="disabled-and-unreachable">Disabled and unreachable nodes</h2>
+        <p>Disabled nodes keep their place with a <code>[disabled]</code> prefix. Nodes set to Development Only, as Print String is by default, have <code>[development only]</code>: they run in the editor and development builds, never in Shipping. Nodes that no flow reaches can never run; they're listed at the end of their graph as comments.</p>
+        <p class="note">A disabled node with one execution input and one output is skipped over: what follows it still runs. One with more, such as a Branch or a Sequence, passes nothing on, and its line says <code>// nothing under it runs</code>. A Development Only node does the same in a cooked build: <code>// in a cooked build nothing under it runs</code>. In 4.27, disabled nodes inside functions and macros may behave differently: the text follows UE5.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="dead"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event BeginPlay()
+    [disabled] PlayIntro()
+    [development only] KismetSystemLibrary::PrintString("debug")
+
+// Unreachable nodes in EventGraph (no flow reaches their exec input):
+    // GameplayStatics::PlaySound2D(/Game/Audio/Ping.Ping)
+
+// Comments over no written node in EventGraph:
+    // [Old ping test]</pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="GuideGraphs.js"></script>
+<script src="Guide.js"></script>
+</body>
+</html>

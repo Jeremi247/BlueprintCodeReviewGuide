@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Literals · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Literals</h1>
+      <p class="lede">Values typed into pins, and how they read in the text.</p>
+    </header>
+
+    <div class="tablewrap">
+<table class="ref">
+<thead><tr><th>Pin value</th><th>Written as</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>String</td><td><code>"Hello"</code></td><td>Quoted, with escapes, exactly as typed</td></tr>
+<tr><td>Name</td><td><code>FName("Spine")</code></td><td>So a name is not read as a string. An empty one is <code>FName("None")</code></td></tr>
+<tr><td>Text</td><td><code>NSLOCTEXT("Ns", "Key", "Hello")</code></td><td>As the engine writes a text: <code>INVTEXT("...")</code> for a text with no key, <code>LOCTABLE("/Game/UI/ST_Menu.ST_Menu", "Key")</code> for a string table entry</td></tr>
+<tr><td>Boolean</td><td><code>true</code> / <code>false</code></td><td>Variable defaults use the engine's <code>True</code> / <code>False</code></td></tr>
+<tr><td>Float</td><td><code>2.0</code>, <code>0.25</code></td><td>Without the trailing zeros the engine saves</td></tr>
+<tr><td>Enum</td><td><code>ECollisionChannel::Visibility</code></td><td>The enum's name and the entry's display name</td></tr>
+<tr><td>Asset or class</td><td><code>/Game/Weapons/BP_Projectile.BP_Projectile_C</code></td><td>The full path, so a same-named asset elsewhere shows; empty is <code>None</code></td></tr>
+<tr><td>Struct</td><td><code>(X=1.0,Y=2.0,Z=3.0)</code></td><td>The engine's text format, whatever form the pin saved it in. A Transform's rotation is a quaternion, <code>(X=0.0,Y=0.0,Z=0.0,W=1.0)</code>, except in a pin you typed it into, where it is the angles typed</td></tr>
+<tr><td>Unset struct pin</td><td><code>(Damage=10.0,FireRate=0.5)</code></td><td>The struct's default value as the engine exports it, members that are zero left out; <code>default</code> where the plugin cannot know it</td></tr>
+<tr><td>Array, Set, Map</td><td><code>[]</code>, <code>{}</code></td><td>Empty unless wired; see <a href="Values.html#pure-nodes">Make Array</a>. A variable's default reads <code>[A,B]</code>, or <code>{("a", 1),("b", 2)}</code> for a map</td></tr>
+<tr><td>Self</td><td><code>self</code></td><td>The Self node</td></tr>
+</tbody>
+</table>
+</div>
+
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>

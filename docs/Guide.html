@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <div class="eyebrow">BlueprintPseudocode plugin</div>
+      <h1>Reading Blueprint pseudocode</h1>
+      <p class="lede">The plugin turns a Blueprint into a text file for code review. These pages show how each kind of node becomes text, with the Blueprint graph beside the lines it produces.</p>
+      <p class="note">Where the engines differ, the examples show 4.27's text. UE5 writes <code>double</code> where 4.27 has <code>float</code>, and some node names and pins differently: see <a href="FileLayout.html#sections">File layout</a>.</p>
+    </header>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="topics">Topics</h2>
+      </div>
+      <div class="topic-groups">
+        <div class="topic-group">
+          <h3>Using the plugin</h3>
+          <div class="topics">
+            <a class="topic" href="GettingText.html"><strong>Getting the text</strong><span>Diff in P4V, export from the editor, or convert whole folders from the command line.</span></a>
+            <a class="topic" href="SwarmSetup.html"><strong>Swarm setup</strong><span>Show a changed Blueprint as pseudocode in P4 Code Review, set up once on the server.</span></a>
+          </div>
+        </div>
+        <div class="topic-group">
+          <h3>Reading a Blueprint</h3>
+          <div class="topics">
+            <a class="topic" href="FileLayout.html"><strong>File layout</strong><span>The header, the order of the sections, and the notes that open an incomplete file.</span></a>
+            <a class="topic" href="Declarations.html"><strong>Variables and components</strong><span>Variables and their flags, components, class defaults and inline objects.</span></a>
+            <a class="topic" href="ViewBindings.html"><strong>View bindings (MVVM)</strong><span>A Widget Blueprint's view models, bindings, events and conditions, in UE5.</span></a>
+            <a class="topic" href="Functions.html"><strong>Functions and events</strong><span>Headers, what a call does beyond the call, a node's results, delegates and redirects.</span></a>
+            <a class="topic" href="Latent.html"><strong>Latent and async nodes</strong><span>Delays, async nodes and macros that wait: the <code>=&gt;</code> blocks.</span></a>
+            <a class="topic" href="Flow.html"><strong>Execution flow</strong><span>Branch, Cast, Sequence, Switch, Gate, Timelines and <code>goto</code> labels.</span></a>
+            <a class="topic" href="Loops.html"><strong>Loops</strong><span>The engine's loop macros as index loops, Break, and an array wired into Target.</span></a>
+            <a class="topic" href="Values.html"><strong>Values and expressions</strong><span>Pure nodes, operators, <code>fn_</code> declarations, structs and long lines.</span></a>
+            <a class="topic" href="Literals.html"><strong>Literals</strong><span>How a string, name, text, number, enum, asset or struct typed into a pin reads.</span></a>
+            <a class="topic" href="Comments.html"><strong>Comments and dead code</strong><span>Comment boxes, node comments, disabled and unreachable nodes.</span></a>
+          </div>
+        </div>
+        <div class="topic-group">
+          <h3>Other assets</h3>
+          <div class="topics">
+            <a class="topic" href="StringTables.html"><strong>String tables</strong><span>A String Table's namespace and entries, with their notes and metadata.</span></a>
+            <a class="topic" href="StateTrees.html"><strong>State Trees</strong><span>States, tasks, conditions, transitions, parameters and bindings.</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="forms">Forms at a glance</h2>
+        <p>The forms in a text that read differently from a plain call, and the page that explains each.</p>
+      </div>
+      <div class="tablewrap">
+        <table class="ref">
+          <thead><tr><th>In the text</th><th>Means</th><th>Page</th></tr></thead>
+          <tbody>
+            <tr><td><code>// Not in the metadata: ...</code></td><td>Notes above the header: the text is incomplete, and they say where</td><td><a href="FileLayout.html#notes-at-the-top">File layout</a></td></tr>
+            <tr><td><code>bool Healed = ...</code>, <code>var Name = ...</code></td><td>A node with execution pins whose outputs other nodes read</td><td><a href="Functions.html#node-results">Functions and events</a></td></tr>
+            <tr><td><code>/* breaks execution flow - ... */</code></td><td>A wire reads a value the flow that reaches it did not set</td><td><a href="Functions.html#breaks-execution-flow">Functions and events</a></td></tr>
+            <tr><td><code>// interface message</code>, <code>// calls OnRep_Health</code></td><td>The call or Set does more than it reads as</td><td><a href="Functions.html#beyond-the-call">Functions and events</a></td></tr>
+            <tr><td><code>redirect function A = B</code></td><td>A name the engine or project config renames at load: the saved name, then the new one</td><td><a href="Functions.html#redirect">Functions and events</a></td></tr>
+            <tr><td><code>KismetSystemLibrary::Delay(2.0) =&gt;</code></td><td>A latent or async call: the lines under it run later, when it finishes</td><td><a href="Latent.html#latent-nodes">Latent and async nodes</a></td></tr>
+            <tr><td><code>[Pin]</code>, <code>[Pin] =&gt;</code></td><td>One block per wired output of a node with several; <code>=&gt;</code> marks one that runs later</td><td><a href="Flow.html#several-outputs">Execution flow</a></td></tr>
+            <tr><td><code>L_Name:</code>, <code>goto L_Name</code></td><td>A node that several execution wires lead to</td><td><a href="Flow.html#goto">Execution flow</a></td></tr>
+            <tr><td><code>for (i = 0; ...)  // ForEachLoop</code></td><td>An engine loop macro, written as the index loop it runs</td><td><a href="Loops.html#for-each-loop">Loops</a></td></tr>
+            <tr><td><code>fn_X = () =&gt; ...</code></td><td>A pure chain read in several places: each <code>fn_X()</code> evaluates it again</td><td><a href="Values.html#fn">Values and expressions</a></td></tr>
+            <tr><td><code>AND(a, b)</code>, <code>OR(a, b)</code></td><td>Blueprint's AND and OR nodes: every operand is evaluated, unlike <code>&amp;&amp;</code></td><td><a href="Values.html#pure-nodes">Values and expressions</a></td></tr>
+            <tr><td><code>[disabled]</code>, <code>[development only]</code></td><td>A node that never runs; one that runs only in the editor and development builds</td><td><a href="Comments.html#disabled-and-unreachable">Comments and dead code</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>

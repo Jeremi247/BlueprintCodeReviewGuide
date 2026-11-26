@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loops · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Loops</h1>
+      <p class="lede">The engine's loop macros are written as the index loops they run, with the macro's name at the end of the line. Loop macros from your own macro libraries are a plain call with a block per output, as on <a href="Latent.html#macros-that-wait">Macros that wait</a>.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="for-each-loop">For Each Loop</h2>
+        <p>The loop body is indented. The Completed output runs after the loop, so it continues at the same level as <code>for</code>. The counter is <code>i</code>, then <code>j</code>, <code>k</code>, <code>l</code> in nested loops. The element is read as <code>Enemies[i]</code>, since the loop reads its array again on every pass.</p>
+        <p class="note">An array that comes out of a call is declared once as <code>fn_X = () =&gt; ...</code> and read as <code>fn_X()</code>: the call runs again on every pass. After the loop, the Index and Element pins hold what the last pass left in them; a read of them there is marked: <code>/* breaks execution flow - after the loop: the last pass's index */</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="foreach"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event ClearWave()
+    for (i = 0; i &lt; Len(Enemies); i++)  // ForEachLoop
+        Enemies[i].DestroyActor()
+
+    ShowHint("Cleared")</pre>
+          <div class="codelabel">Other loop forms</div>
+          <pre class="code" data-hl>for (i = Len(Enemies) - 1; i &gt;= 0; i--)  // ReverseForEachLoop
+for (i = 0; i &lt;= 9; i++)  // ForLoop
+while (HasAmmo)</pre>
+          <div class="codelabel">Nested</div>
+          <pre class="code" data-hl>for (i = 0; i &lt; Len(Teams); i++)  // ForEachLoop
+    for (j = 0; j &lt; Len(Teams[i].Members); j++)  // ForEachLoop
+        Teams[i].Members[j].Revive()</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="break">Break</h2>
+        <p>A wire into the Break pin of a "with Break" loop becomes <code>break</code>. When the wire comes from outside the loop body, for example from another event, the line names the loop by the line number of its <code>for</code> in the file you are reading: <code>break  // calls "break" on the loop at line 78</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="break"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>    for (i = 0; i &lt; Len(Enemies); i++)  // ForEachLoopWithBreak
+        if (Enemies[i].IsBoss)
+            break
+        else
+            Enemies[i].Stun()</pre>
+          <div class="codelabel">Break from another event</div>
+          <pre class="code" data-hl>event StopSearch()
+    break  // calls "break" on the loop at line 78</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="array-into-target">An array wired into Target</h2>
+        <p>An array wired into the Target pin of a call makes Blueprint call the function once for every element, then run what follows. It is written as that loop, with the call on the element. The node's outputs come from the last element's call.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>Array&lt;Actor*&gt; OutActors = GameplayStatics::GetAllActorsOfClass(/Script/Engine.Actor)
+
+for (i = 0; i &lt; Len(OutActors); i++)  // array wired into Target
+    OutActors[i].DestroyActor()
+
+ShowHint("Cleared")</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="GuideGraphs.js"></script>
+<script src="Guide.js"></script>
+</body>
+</html>

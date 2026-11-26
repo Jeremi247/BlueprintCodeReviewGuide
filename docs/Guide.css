@@ -1,0 +1,198 @@
+/* Every guide page: the sidebar of pages, then the page. A case is its explanation, then its graph with the text beside it. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --fg: #18202b;
+  --muted: #586374;
+  --line: #d9dfe8;
+  --accent: #1f5fa8;
+  --accent-soft: #e3edf9;
+  --code-bg: #f8fafc;
+  --hl-kw: #1f5fa8;
+  --hl-str: #a3402a;
+  --hl-cmt: #6b7686;
+  --hl-fn: #7a3fb0;
+  --hl-lbl: #9a5b00;
+  --hl-ann: #23775a;
+  /* The graph panel stays dark in both themes, like the Blueprint editor. */
+  --graph-bg: #232528;
+  --graph-grid: #2c2f33;
+  --graph-grid-major: #35393e;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161c; --surface: #191e26; --fg: #e3e8ef; --muted: #98a3b3; --line: #2a313c;
+    --accent: #7fb2ec; --accent-soft: #1d2b3d; --code-bg: #0f1318;
+    --hl-kw: #7fb2ec; --hl-str: #e6a17c; --hl-cmt: #7d8899; --hl-fn: #c79cf2; --hl-lbl: #e3b45c; --hl-ann: #6fcfa5;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+}
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: 0.01em; line-height: 1.2; }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; }
+h2 { font-size: 22px; }
+h3 { font-size: 17px; }
+p { margin: 0; }
+a { color: var(--accent); }
+/* No ligatures: the guide shows the characters the text holds, -> and => as typed. */
+code, pre { font-variant-ligatures: none; }
+code { font-family: var(--font-mono); font-size: 0.88em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+
+/* ---- The shell ---------------------------------------------------------------------------------- */
+.shell {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: 236px minmax(0, 1200px); justify-content: center; column-gap: 56px;
+}
+main.page {
+  min-width: 0; container-type: inline-size;
+  padding-block: 40px 80px;
+  display: grid; gap: 40px; align-content: start;
+}
+
+nav.side {
+  position: sticky; top: 0; align-self: start;
+  max-height: 100vh; overflow-y: auto; scrollbar-width: thin;
+  padding-block: 40px; font-size: 14px;
+}
+nav.side summary { display: none; }
+nav.side .side-group {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); margin: 22px 0 6px 10px;
+}
+nav.side ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+nav.side a { display: block; text-decoration: none; border-radius: 6px; }
+nav.side a.page-link { padding: 5px 10px; color: var(--fg); }
+nav.side a.page-link:hover, nav.side a.page-link:focus-visible { background: var(--accent-soft); outline: none; }
+nav.side a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+nav.side ul.sub { margin: 4px 0 10px 14px; padding-left: 6px; border-left: 1px solid var(--line); }
+nav.side ul.sub a { padding: 3px 8px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+nav.side ul.sub a:hover, nav.side ul.sub a:focus-visible { color: var(--accent); outline: none; }
+
+header.top { display: grid; gap: 14px; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; justify-self: start;
+}
+a.eyebrow:hover, a.eyebrow:focus-visible { color: var(--accent); }
+.lede { font-size: 17px; color: var(--muted); }
+
+nav.pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; border-top: 1px solid var(--line); padding-top: 28px; }
+nav.pager a {
+  display: grid; gap: 2px; padding: 12px 16px; text-decoration: none;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+}
+nav.pager a:hover, nav.pager a:focus-visible { border-color: var(--accent); outline: none; }
+nav.pager a.next { grid-column: 2; text-align: right; }
+nav.pager .dir { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+nav.pager .title { font-weight: 600; color: var(--fg); }
+
+@media (max-width: 960px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  nav.side {
+    position: static; max-height: none; overflow: visible;
+    padding-block: 12px; border-bottom: 1px solid var(--line);
+  }
+  nav.side summary { display: list-item; cursor: pointer; font-weight: 600; padding: 6px 0; }
+  nav.side ul.sub { display: none; }
+  main.page { padding-top: 28px; }
+}
+
+/* ---- Sections and cases ------------------------------------------------------------------------- */
+section.group { display: grid; gap: 20px; }
+.group-head { display: grid; gap: 8px; border-bottom: 2px solid var(--fg); padding-bottom: 10px; }
+.group-head p { color: var(--muted); }
+
+.case { display: grid; gap: 18px; padding-top: 32px; border-top: 1px solid var(--line); }
+.about { display: grid; gap: 10px; min-width: 0; }
+.note { font-size: 13.5px; color: var(--muted); }
+.example { display: grid; gap: 10px 16px; min-width: 0; align-items: start; }
+.codecol { display: grid; gap: 10px; min-width: 0; }
+/* The graph on the left at its own width, up to 60% of the row; the text it becomes on the right.
+   GuideGraphs.js sets --graph-w. Too narrow for both, the text goes under the graph. */
+@container (min-width: 760px) {
+  .example:has(> figure.graph) { grid-template-columns: minmax(0, min(var(--graph-w, 60%), 60%)) minmax(0, 1fr); }
+}
+
+figure.graph {
+  margin: 0; min-width: 0; overflow-x: auto;
+  background-color: var(--graph-bg);
+  background-image:
+    linear-gradient(var(--graph-grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--graph-grid-major) 1px, transparent 1px),
+    linear-gradient(var(--graph-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--graph-grid) 1px, transparent 1px);
+  background-size: 128px 128px, 128px 128px, 16px 16px, 16px 16px;
+  border-radius: 8px; padding: 12px;
+}
+figure.graph svg { display: block; width: 100%; height: auto; }
+pre.code {
+  margin: 0; overflow-x: auto; min-width: 0;
+  background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+  padding: 12px 14px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--fg);
+}
+.codelabel { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.hl-kw { color: var(--hl-kw); font-weight: 500; }
+.hl-str { color: var(--hl-str); }
+.hl-cmt { color: var(--hl-cmt); font-style: italic; }
+.hl-fn { color: var(--hl-fn); font-weight: 500; }
+.hl-lbl { color: var(--hl-lbl); }
+.hl-ann { color: var(--hl-ann); }
+
+table.ref { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tablewrap { overflow-x: auto; min-width: 0; }
+table.ref th, table.ref td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.ref th { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+table.ref td:first-child { white-space: nowrap; }
+table.ref td:not(:last-child) code { white-space: nowrap; }
+table.ref td:last-child code { overflow-wrap: anywhere; }
+
+/* ---- Cards: the ways to get the text, the Swarm steps, the topics ------------------------------- */
+.steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.steps.one { grid-template-columns: minmax(0, 1fr); }
+/* A card with a command takes a row of its own: the command gets the page's full width. */
+.step:has(pre) { grid-column: 1 / -1; }
+.step {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0;
+}
+.step h2, .step h3 { font-size: 18px; }
+.step p, .step li { color: var(--muted); font-size: 14px; }
+.step ol, .step ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; min-width: 0; }
+/* A grid item is as wide as its longest line unless allowed to shrink: a command in a list item stays inside the card. */
+.step li { min-width: 0; }
+.step code { overflow-wrap: anywhere; }
+/* A one-line command to copy wraps rather than scrolls, so its end shows; the copied text stays one line. */
+pre.code.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.kbd {
+  font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 4px; padding: 0 5px; background: var(--surface); color: var(--fg);
+}
+
+.topic-groups { display: grid; gap: 28px; }
+.topic-group { display: grid; gap: 10px; }
+.topic-group h3 {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); font-weight: 500;
+}
+.topics { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+a.topic {
+  display: grid; gap: 4px; align-content: start; padding: 14px 16px; text-decoration: none;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: var(--fg);
+}
+a.topic:hover, a.topic:focus-visible { border-color: var(--accent); outline: none; }
+a.topic strong { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+a.topic:hover strong, a.topic:focus-visible strong { color: var(--accent); }
+a.topic span { color: var(--muted); font-size: 14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  nav.side a, nav.pager a, a.topic { transition: background-color .15s, border-color .15s, color .15s; }
+}

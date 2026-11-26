@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Latent and async nodes · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Latent and async nodes</h1>
+      <p class="lede">Some nodes finish later than they are called: a Delay, an async node, a macro that waits. What runs when they finish is the <code>=&gt;</code> block under the call.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="latent-nodes">Latent nodes: <code>=&gt;</code> blocks</h2>
+        <p>A node with the clock icon, such as Delay, runs what follows it later, when it finishes. The call ends in <code>=&gt;</code> and what runs later is indented under it. The lines under a <code>=&gt;</code> read values as they are when they run, not as they were at the call.</p>
+        <p class="note">A loop runs all its passes in one frame, so a Delay in a loop body starts once, on the first pass, and the block under it runs once, after the loop. The line says so: <code>// starts on the first pass only; runs after the loop</code>. A Retriggerable Delay restarts instead: <code>// restarts on every pass; runs once after the loop</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="latent"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnDied()
+    KismetSystemLibrary::Delay(2.0) =&gt;
+        Respawn()</pre>
+          <div class="codelabel">In a loop</div>
+          <pre class="code" data-hl>for (i = 0; i &lt; Len(Enemies); i++)  // ForEachLoop
+    KismetSystemLibrary::Delay(1.0) =&gt;  // starts on the first pass only; runs after the loop
+        Respawn()</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="async-nodes">Async nodes: Async Load Asset, Play Montage, AI Move To</h2>
+        <p>An async node runs its plain output at once and its other outputs later. The plain output continues after the node, at its level. Each later output is a <code>=&gt;</code> block, written first, and the data the node delivers is the block's parameters. With one later output, <code>=&gt;</code> ends the call's line; with more, each wired output gets <code>[Pin] =&gt;</code>.</p>
+        <p class="note">Reading the node's data in the flow after the node, before the block has run, is marked as <a href="Functions.html#breaks-execution-flow">a read the flow did not set</a>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="async"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnInteract()
+    AsyncLoadAsset(Icon) =&gt; (Object)
+        ShowAsset(Object)
+
+    UpdateHud()</pre>
+          <div class="codelabel">Several later outputs</div>
+          <pre class="code" data-hl>    PlayMontage(InSkeletalMeshComponent=Mesh, MontageToPlay=Reload, PlayRate=1.0, StartingPosition=0.0, StartingSection=FName("None"))
+        [On Completed] =&gt; (NotifyName)
+            FinishReload()
+        [On Interrupted] =&gt; (NotifyName)
+            CancelReload()
+
+    UpdateAmmoText()</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="macros-that-wait">Macros and collapsed graphs that wait</h2>
+        <p>A macro or collapsed graph is read through its own graph. An output it reaches only through a latent node inside it, a Delay for example, is a <code>=&gt;</code> block, like the Delay's own. One that some paths reach at once and others only after the wait says <code>// may run now or later</code>.</p>
+        <p class="note">A macro with several outputs is a plain call over its blocks: <code>[Pin]</code> for an output that runs at once, <code>[Pin] =&gt;</code> for one that waits. An output fired from inside a loop in the macro runs on every pass, and its block says so: <code>[Loop Body]  // runs on every pass of a loop in LoopTwice</code>.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>for (i = 0; i &lt; Len(Points); i++)  // ForEachLoop
+    WaitThenSpawn(Points[i]) =&gt;  // starts on the first pass only; runs after the loop
+        ShowHint("spawned")</pre>
+        <div class="codelabel">Several outputs</div>
+        <pre class="code" data-hl>    FadeToBlack(1.0) =&gt;  // may run now or later
+        OpenMenu()
+
+    PlayDeathAnimation(Death)
+        [Anim Not Valid]
+            EnableRagdoll()
+        [Received Ragdoll Notify] =&gt;
+            FinishDeath()</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="GuideGraphs.js"></script>
+<script src="Guide.js"></script>
+</body>
+</html>

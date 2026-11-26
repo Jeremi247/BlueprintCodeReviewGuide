@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variables and components · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Variables and components</h1>
+      <p class="lede">Variables, components and class defaults: what this Blueprint declares and what it changes from its parent. Names are written without spaces, so a variable called "Max Health" is <code>MaxHealth</code> everywhere.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="variables">Variables</h2>
+        <p>One line each: type, name, default value, then flags in brackets. Variables are grouped under their category and sorted by name. Event dispatchers have a section of their own.</p>
+        <div class="tablewrap">
+<table class="ref">
+<thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>InstanceEditable</code></td><td>The eye icon is open: editable per instance in the level</td></tr>
+<tr><td><code>ReadOnly</code></td><td>Blueprint Read Only</td></tr>
+<tr><td><code>FieldNotify</code></td><td>Field Notify (UE5): MVVM and UMG bindings are told when it changes</td></tr>
+<tr><td><code>ExposeOnSpawn</code></td><td>Shown as a pin on Spawn Actor</td></tr>
+<tr><td><code>Private</code></td><td>Not visible to child Blueprints</td></tr>
+<tr><td><code>Replicated</code> / <code>RepNotify=F</code></td><td>Replication, with the notify function if one is set</td></tr>
+<tr><td><code>Condition=C</code></td><td>Replication Condition, when it isn't None (<code>OwnerOnly</code>, <code>InitialOnly</code>, ...)</td></tr>
+<tr><td><code>Transient</code>, <code>SaveGame</code>, <code>Config</code></td><td>The matching checkboxes in the details panel</td></tr>
+</tbody>
+</table>
+</div>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// Combat
+BP_Enemy* CurrentTarget = None  [Transient]
+float MaxHealth = 100.0  [InstanceEditable, Replicated]
+E_FireMode Mode = E_FireMode::Burst
+S_WeaponStats Stats = (Damage=25.0,FireRate=0.1)
+Array&lt;BP_Enemy*&gt; Targets = []
+
+// Default
+int Ammo = 30  [Replicated, Condition=OwnerOnly]
+bool IsDead = False  [RepNotify=OnRep_IsDead]</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="components">Components and class defaults</h2>
+        <p>Each added component shows its class, its name and what it's attached to, with the settings that differ from the component's own defaults under it. A component from the parent class appears only when this Blueprint changes it, as <code>override inherited component</code>. "Class defaults" lists the parent's properties that this Blueprint changes.</p>
+        <p>A changed member of a struct setting is one line, as a path: <code>BodyInstance.WalkableSlopeOverride.WalkableSlopeAngle = 30.0</code>. A struct the engine keeps as one value, such as a <code>Vector</code>, <code>Rotator</code> or <code>Color</code>, stays whole on its line, and so does a list.</p>
+        <p>Objects created inside a property (instanced, "edit inline" objects) are written out in braces with the settings that differ. <code>Class {}</code> means nothing differs.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>component SceneComponent Root  attached to DefaultSceneRoot (inherited)
+component StaticMeshComponent DoorMesh  attached to Root
+    BodyInstance.WalkableSlopeOverride.WalkableSlopeAngle = 30.0
+    RelativeLocation = (X=0.0,Y=10.0,Z=0.0)
+    StaticMesh = StaticMesh'/Game/Enviro/Door/SM_Door.SM_Door'
+override inherited component CharacterMesh0
+    bCastDynamicShadow = False
+    BodyInstance.CollisionProfileName = NoCollision</pre>
+        <pre class="code" data-hl>// ===== Class defaults (differ from Character) =====
+
+AutoPossessPlayer = Player0
+Behaviour = BP_PatrolBehaviour {
+    Speed = 300.0
+}
+bReplicates = True
+CharacterMovement = CharacterMovementComponent {
+    MaxWalkSpeed = 900.0
+}
+PrimaryActorTick.bStartWithTickEnabled = False
+Steps = [
+    MoveStep {
+        Distance = 100.0
+    },
+    WaitStep {}
+]</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>

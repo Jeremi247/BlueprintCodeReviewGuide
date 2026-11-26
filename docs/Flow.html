@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Execution flow · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Execution flow</h1>
+      <p class="lede">Indentation shows what runs inside what. Reroute nodes are skipped, so a wire through a reroute reads the same as a direct one.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="branch">Branch</h2>
+        <p>A Branch becomes <code>if</code> / <code>else</code>. When only False is wired, the condition is negated and there's no <code>else</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="branch"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnHit()
+    if (IsDead)
+        PlayDeath()
+    else
+        TakeHit()</pre>
+          <div class="codelabel">Only False wired</div>
+          <pre class="code" data-hl>    if (!IsDead)
+        TakeHit()</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="is-valid">Is Valid</h2>
+        <p>The Is Valid macro (the one with the question mark) reads like a Branch on <code>IsValid(...)</code>, and so does Is Valid Class. So does a variable Get converted to a Validated Get, on the variable it gets: <code>if (IsValid(Target))</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="isvalid"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnInteract(Actor* Target)
+    if (IsValid(Target))
+        Target.Use()
+    else
+        ShowHint("Nothing to use")</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="cast">Cast</h2>
+        <p>When only the success pin is wired, the flow stays flat and a note says which outputs lead nowhere. When Cast Failed is wired too, both outputs become blocks.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="cast"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnOverlap(Actor* OtherActor)
+    BP_Enemy* AsBPEnemy = CastToBP_Enemy(OtherActor)  // nothing on: Cast Failed
+    AsBPEnemy.TakeHit(10.0)</pre>
+          <div class="codelabel">Both outputs wired</div>
+          <pre class="code" data-hl>    BP_Enemy* AsBPEnemy = CastToBP_Enemy(OtherActor)
+        [then]
+            AsBPEnemy.TakeHit(10.0)
+        [Cast Failed]
+            ShowHint("Not an enemy")</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="several-outputs">Sequence, Switch and other nodes with several outputs</h2>
+        <p>The node gets its own line, then one block per wired output, labelled with the pin name in brackets. Outputs with nothing wired are left out. A Switch names them in a note on its line, so a case added to an enum later shows up in a diff.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="sequence"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnOpen()
+    Sequence()
+        [Then 0]
+            OpenDoor()
+        [Then 1]
+            GameplayStatics::PlaySound2D(/Game/Audio/DoorCreak.DoorCreak)</pre>
+          <div class="codelabel">Switch</div>
+          <pre class="code" data-hl>    SwitchOnEWeaponType(WeaponType)  // nothing on: Pistol
+        [Rifle]
+            FireRifle()
+        [Shotgun]
+            FireShotgun()</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="several-inputs">Several inputs: Gate, Do Once, Do N, MultiGate, Timeline</h2>
+        <p>A node with more than one execution input is written as a call on the input a wire enters, with the node's settings as arguments: <code>Gate.Enter(StartClosed=true)</code>. Its wired outputs follow as blocks, since they run only when the node lets them through. An input that only changes the node's state, such as Open, Close or Toggle on a Gate, or Reset, is one statement: <code>Gate.Open()</code>.</p>
+        <p class="note">Two nodes with one title are numbered, <code>DoOnce</code> and <code>DoOnce_2</code>. An input pin with no name in the editor is written as the file saved it: <code>DoOnce.execute(StartClosed=false)</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="inputs"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnStep()
+    Gate.Enter(StartClosed=true)
+        [Exit]
+            OpenDoor()
+
+event OnLever()
+    Gate.Open()</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="timelines">Timelines</h2>
+        <p>Every input of a Timeline is a call on it: <code>DoorTimeline.Play()</code>, <code>DoorTimeline.Reverse()</code>. What it fires runs later, whichever input started it, so it is written once, as a <code>timeline</code> of its own after the events. Its header ends with its length and the settings that are on: <code>[Length=2.0, AutoPlay, Loop]</code>. The keys of its tracks are not shown.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="timeline"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnOpen()
+    DoorTimeline.Play()
+
+event OnClose()
+    DoorTimeline.Reverse()
+
+timeline DoorTimeline  [Length=2.0]
+    [Update] =&gt; (DoorTimeline.Direction, DoorTimeline.Alpha)
+        SetDoorAngle(DoorTimeline.Alpha)
+    [Finished] =&gt;
+        GameplayStatics::PlaySound2D(/Game/Audio/DoorClosed.DoorClosed)</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="goto">Two wires into one node: labels and <code>goto</code></h2>
+        <p>When several execution wires lead to the same node, it gets a label (<code>L_</code> plus its title) the first time it's written. Every other path that reaches it says <code>goto</code> that label. This also shows wires that loop back to an earlier node.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="goto"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnTargetHit(bool Headshot)
+    if (Headshot)
+        AddScore(50)
+
+        L_PlaySound2D:
+        GameplayStatics::PlaySound2D(/Game/Audio/Ping.Ping)
+    else
+        goto L_PlaySound2D</pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="GuideGraphs.js"></script>
+<script src="Guide.js"></script>
+</body>
+</html>

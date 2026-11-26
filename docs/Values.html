@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Values and expressions · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Values and expressions</h1>
+      <p class="lede">Pure nodes (green, no execution pins) are written inside the line that uses them, the way they're evaluated: when that line runs.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="pure-nodes">Pure nodes, operators and conversions</h2>
+        <p>Math and logic nodes become operators (<code>+</code>, <code>&lt;=</code>, <code>!</code>). The small automatic conversion nodes become calls, such as <code>FTrunc(...)</code> for float to integer. <strong>Make Array</strong> and <strong>Make Set</strong> are written as <code>[Pistol, Rifle]</code>, <strong>Make Map</strong> as <code>{"one": 1, "two": 2}</code>.</p>
+        <p>A library function is named with its library, <code>KismetSystemLibrary::PrintString(...)</code>, since two libraries can have functions of the same name. A call on an object starts with that object: <code>Enemy.TakeHit(...)</code>.</p>
+        <p><strong>AND</strong>, <strong>OR</strong>, <strong>XOR</strong>, <strong>NAND</strong> and <strong>NOR</strong> are written as calls, not as <code>&amp;&amp;</code> and <code>||</code>: <code>AND(KismetSystemLibrary::IsValid(Target), Target.Health &gt; 0.0)</code>. Blueprint evaluates every operand of these nodes, so the second one is read even when the first is false, which <code>&amp;&amp;</code> would not do.</p>
+        <p class="note">Some nodes stay calls so that what they do shows: the string and text comparisons, named by their title, such as <code>KismetStringLibrary::EqualCaseInsensitiveString(A=Name, B="Boss")</code>, and a comparison whose tolerance is wired or changed, such as <code>KismetMathLibrary::EqualVector(A=Aim, B=Target, ErrorTolerance=0.1)</code>.</p>
+        <p class="note">The Array, Set and Map functions, Set Members in Struct and the in-place math functions write into what is wired to their by-reference pin. When that is a copy, such as the result of a function, the change is lost and the argument is marked: <code>KismetArrayLibrary::Add(TargetArray=GetItems() /* redundant data operation - writes into a copy */, NewItem=Item)</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="expr"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event Tick(float DeltaSeconds)
+    Score = FTrunc(Distance * 2.0)</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="fn">One pure chain read in several places: <code>fn_</code></h2>
+        <p>Blueprint evaluates a pure node again for every statement that reads it. When a pure chain is read by two or more wires, it's declared once as <code>fn_Name = () =&gt; ...</code>, just above the first statement that calls it, and each statement calls <code>fn_Name()</code>. So each call is one more evaluation, which matters for random numbers, expensive queries and values that change in between. Within one statement it runs once, even when the line calls it twice.</p>
+        <p class="note">A chain read by one wire stays inline, and so does a call with no wired input, such as <code>KismetMathLibrary::RandomFloat()</code>: each time it is written, it runs. An array a loop runs over is an <code>fn_</code> even when read once, since the loop evaluates it on every pass.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="shared"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnHit(float BaseDamage)
+    fn_Multiply_FloatFloat = () =&gt; BaseDamage * DamageMultiplier
+    Health = Health - fn_Multiply_FloatFloat()
+    ShowHint(FloatToString(fn_Multiply_FloatFloat()))</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="structs">Structs: Break and Make</h2>
+        <p>A Break node reads fields, so it's written as <code>Struct.Field</code>. A Make node is written as <code>Type{Field=...}</code>. Engine break functions such as Break Hit Result or Break Vector stay calls: <code>KismetMathLibrary::BreakVector(V).X</code>.</p>
+        <p><strong>Set Members in Struct</strong> is a call named by its title, with the struct it writes into first: <code>SetMembersInS_WeaponStats(Stats, Damage=25.0)</code>. <strong>Get (a copy)</strong> and <strong>Get (a ref)</strong> on an array are written as an index, <code>Stats[0]</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="struct"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event Upgrade()
+    ApplyDamage(Stats.Damage)
+    Stats = S_WeaponStats{Damage=25.0, FireRate=0.1}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="long-lines">Long lines</h2>
+        <p>A line longer than 140 characters, not counting its indentation, is split at its widest brackets, one argument per line. The operands of <code>AND(...)</code> and <code>OR(...)</code> count as arguments. A variable's default and a class default's value are split the same way, with their flags kept on the last line.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>Actor* SpawnActorActor = SpawnActorActor(
+    Class=/Script/Engine.Actor,
+    SpawnTransform=KismetMathLibrary::MakeTransform(Location=SpawnLocation, Rotation=SpawnRotation, Scale=SpawnScale),
+    CollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::Default,
+    Instigator=None
+)
+
+if (
+    AND(
+        LongConditionTermOne &gt; 0.0,
+        LongConditionTermTwo &gt; 0.0,
+        LongConditionTermThree &gt; 0.0,
+        LongConditionTermFour &gt; 0.0,
+        LongConditionTermFive &gt; 0.0
+    )
+)</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="GuideGraphs.js"></script>
+<script src="Guide.js"></script>
+</body>
+</html>

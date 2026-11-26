@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functions and events · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Functions and events</h1>
+      <p class="lede">Each function, event and macro starts with a header line. Its body is indented below it, in the order the white execution wires run.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="function">Function</h2>
+        <p>Inputs and outputs go in the header, followed by specifiers such as Pure, Const, Private and Category. Local variables come right under the header. A Return Node becomes <code>return</code> with its values named.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="function"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>function ApplyDamage(float Amount) -&gt; (float NewHealth)  [Category="Combat"]
+    local int Hits = 0
+    Health = Health - Amount
+    return NewHealth=Health</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="events">Events</h2>
+        <p>Engine and custom events become <code>event</code> with their output pins as parameters, and replication settings in brackets. Other nodes that start execution, such as input actions, start with <code>on</code> and have one block per output (<code>[Pressed]</code>, <code>[Released]</code>).</p>
+        <p class="note">An input event lists the settings of its Details panel that differ from the defaults: <code>on F(Key Key)  [ConsumeInput=false]</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="events"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event BeginPlay()
+    PlayIntro()
+
+event ServerFire(float Spread)  [Server, Reliable]
+    FireWeapon(Spread)</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="beyond-the-call">What a call does beyond the call</h2>
+        <p>Some statements read like a plain call or assignment and do more. A comment says what:</p>
+        <ul>
+          <li><code>// interface message</code>: the call goes to whatever object it is given. If that object does not implement the interface, or is None, nothing happens and the outputs are their defaults.</li>
+          <li><code>// Server, Reliable</code> and the other replication flags: the call runs on another machine, later; an Unreliable one may not run at all.</li>
+          <li><code>// calls OnRep_Health</code>: setting a variable with a RepNotify function calls that function at once, on the machine that set it.</li>
+          <li><code>// broadcasts a FieldNotify change</code> (UE5): the Set tells the variable's listeners, such as MVVM bindings, that it changed.</li>
+        </ul>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>Target.Interact()  // interface message
+ServerFire(0.5)  // Server, Reliable
+Health = 5  // calls OnRep_Health
+Ammo = 30  // broadcasts a FieldNotify change</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="override-skips-parent">An override that skips its parent</h2>
+        <p>An overriding <code>event</code> or <code>function</code> does not run the parent's version unless a Call to Parent node does. When no Call to Parent is reachable and the parent has a version to skip, the header says so. The parent has one when a parent Blueprint implements it, or when C++ declares it a BlueprintNativeEvent.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>event OnEnemyKilled(Pawn* Enemy)  // does not call the parent's OnEnemyKilled
+    Score = Score + 1</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="node-results">Using a node's result</h2>
+        <p>When other nodes read the outputs of a node with execution pins, its line declares them. A node with one output is <code>Type Name =</code>, named after its pin, or after the node when the pin is Return Value: <code>bool Healed = MyLibrary::Heal(Target=Ally, Amount=10.0)</code>. A node with several outputs is <code>var Name =</code>, and each read is <code>Name.Pin</code>. A name that repeats in a graph gets <code>_2</code>, <code>_3</code>.</p>
+        <p class="note">Calls on another object start with that object, <code>Enemy.TakeHit(10.0)</code>. A call with one argument leaves out its name. Advanced pins (under the arrow at the bottom of a node) appear only when they are wired or changed.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="let"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event OnFire()
+    var LineTraceByChannel = KismetSystemLibrary::LineTraceByChannel(Start=TraceStart, End=TraceEnd)
+
+    if (LineTraceByChannel.ReturnValue)
+        SpawnImpact(GameplayStatics::BreakHitResult(LineTraceByChannel.OutHit).Location)</pre>
+          <div class="codelabel">One output</div>
+          <pre class="code" data-hl>    bool Healed = MyLibrary::Heal(Target=Ally, Amount=10.0)
+
+    if (Healed)
+        PlayHealEffect()</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="breaks-execution-flow">A read the flow did not set</h2>
+        <p>A wire can read a node's output from a place where that node has not run: in another event, on the other arm of a Branch, after a loop. It gets whatever an earlier run left there, or the default. Such a read is marked with the reason: <code>/* breaks execution flow - assigned in 'Test2' event */</code>, <code>never assigned</code>, <code>not assigned on this path</code>.</p>
+        <p class="note">Nodes that two events both run are written once, under the event that comes first by name, and the other event ends in a <code>goto</code> to them (see <a href="Flow.html#goto">labels</a>).</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>TestFunc(GetScale /* breaks execution flow - assigned in 'Test2' event */)</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="delegates">Delegates</h2>
+        <p>The red delegate pin of an event, wired into a Bind node, is written as the event's name. A Create Event node becomes <code>CreateEvent(FunctionName)</code>.</p>
+      </div>
+      <div class="example">
+        <figure class="graph" data-graph="delegate"></figure>
+        <div class="codecol">
+          <pre class="code" data-hl>event BeginPlay()
+    Enemy.BindEventToOnDeath(OnEnemyDied)
+
+event OnEnemyDied()
+    AddScore(100)</pre>
+          <div class="codelabel">Create Event node</div>
+          <pre class="code" data-hl>KismetSystemLibrary::SetTimerByEvent(Event=CreateEvent(HandleTimeout), Time=2.0, Looping=false)</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="other-graph-kinds">Other graph kinds</h2>
+        <p>Event dispatchers are listed as <code>dispatcher OnDeath(Actor* Killer)</code>. Macros start with <code>macro</code> and collapsed graphs with <code>collapsed graph</code>; their header lists every pin, execution pins as <code>exec Name</code>, inputs first, then outputs after <code>-&gt;</code>: <code>macro LoopTwice(exec Exec) -&gt; (exec LoopBody, exec Completed, int Index)</code>. A collapsed graph follows the graph it sits in, after a <code>// collapsed inside EventGraph:</code> line. An Interface Blueprint's functions are declarations, so only their header is written: <code>interface function GetScore() -&gt; (int Score)</code>.</p>
+        <p>Anim graphs and state machines are skipped with a one-line note; an Anim Blueprint's event graph is written as usual. A Widget Blueprint's layout isn't written, only its graphs and <a href="ViewBindings.html">view bindings</a>. Level Blueprints, inside <code>.umap</code> files, aren't supported yet.</p>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="redirect">Renamed C++: <code>redirect</code></h2>
+        <p>The text prints names as the asset saved them. When the engine or project config renames one at load, the function or event that uses it starts with a <code>redirect</code> line: the saved name, then the new one. The asset takes the new name the next time it is saved.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>function OnHit(Actor* Other)
+    redirect function MyLibrary.Heal = MyLibrary.RestoreHealth
+    redirect type EnemyBase = EnemyCharacter
+    EnemyBase* AsEnemyBase = CastToEnemyBase(Other)  // nothing on: Cast Failed
+    MyLibrary::Heal(Target=AsEnemyBase, Amount=10.0)</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="GuideGraphs.js"></script>
+<script src="Guide.js"></script>
+</body>
+</html>

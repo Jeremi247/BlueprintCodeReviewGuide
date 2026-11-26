@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>View bindings (MVVM) · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>View bindings (MVVM)</h1>
+      <p class="lede">A Widget Blueprint that uses UE5's Model View ViewModel plugin has its view written between the class defaults and the functions, in up to six sections that are left out when empty: <code>View models</code>, <code>View bindings</code>, <code>View events</code>, <code>View conditions</code>, <code>View settings</code> and <code>View extensions</code>. A 4.27 widget has none of this.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="view-models">View models</h2>
+        <p>A view model line is its class, its name and how it is created: <code>manual</code>, <code>new</code>, <code>global("Identifier")</code>, <code>path(Hero)</code>, <code>resolver(BP_MyResolver)</code> with the resolver's settings under it, <code>context</code> or <code>instanced</code>. Flags in brackets are the options that differ from the editor's default.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// ===== View models =====
+
+VM_Player Hero = manual
+VM_Player Hint = resolver(BP_HintResolver)
+    Category = Combat
+VM_Player Player = new  [CreateGetterFunction=False]
+VM_Player Shared = global("PlayerShared")  [Optional]</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="bindings">Bindings</h2>
+        <p>A binding is <code>widget &lt;- view model</code> when it writes the widget, <code>-&gt;</code> when it writes the view model, and <code>&lt;-&gt;</code> both ways. A path is the widget's or view model's name, then the properties. Flags: <code>OneTime</code>, <code>Execution=Tick</code> (an execution mode override), and <code>Enabled=False</code> (compiled, but switched off until the widget switches it on). A conversion function stands in place of the path it converts, written as a call as in a graph.</p>
+        <p>Bindings are sorted by widget, with a blank line between widgets.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// ===== View bindings =====
+
+HealthBar.Percent &lt;- Player.Health  [OneTime]
+
+NameInput.Text &lt;-&gt; Hero.Name
+
+KismetMathLibrary::FMin(A=VolumeSlider.MaxValue, B=100.0) -&gt; Shared.Volume
+VolumeSlider.Value -&gt; Shared.Volume  [Enabled=False]</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="events-and-conditions">Events, conditions and the other sections</h2>
+        <p>An event is <code>on Widget.Event</code> with the call it runs under it; a condition is <code>when Path &lt; 0.5</code>, with <code>in [a, b]</code> for a range that includes its ends and <code>in (a, b)</code> for one that does not. A blank line sets each one apart. A binding, event or condition that is not compiled starts with <code>[not compiled]</code>: it does not exist at run time, as a <code>[disabled]</code> node in a graph. View settings list only the flags that were changed. A ListView extension names the entry widget and its view model, <code>WBP_Entry.VM_Entry</code>. The other sections are sorted by their first line.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// ===== View events =====
+
+on FireButton.OnClicked
+    Player.Fire(5)
+
+// ===== View conditions =====
+
+when Player.Health &lt; 10.0
+    PlayLowHealth()
+
+[not compiled] when Player.Health in [10.0, 50.0]
+    PlayMidHealth()</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>

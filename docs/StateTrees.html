@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State Trees · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>State Trees</h1>
+      <p class="lede">A StateTree asset is written as its schema, evaluators, global tasks and states, shaped the way the tree runs rather than as a list of settings. After the two header lines, a short legend says what the forms mean at run time.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="states">States</h2>
+        <p>The <code>State tree</code> section is an outline: every state's name and settings, children indented under their parent. With no <code>Selection=</code>, a state tries its children top to bottom and enters the first whose <code>enter if</code> passes.</p>
+        <p>The <code>States</code> section has each state in full, as <code>state Name</code>, its children indented under it in the order the asset saved them, since selection runs in that order. A parent's tasks keep running while any child is active. Only settings that differ from the default are written, such as <code>Selection=</code>, <code>Type=</code> for a Group, Linked, LinkedAsset or Subtree state (with what a linked one points to), and <code>disabled</code>.</p>
+        <p>Under a state, in this order: its description as <code>//</code> lines, <code>tag</code>, <code>weight</code>, <code>tick</code> (a custom tick rate) and <code>enter on event</code>, then its <a href="#parameters">parameters</a>, <code>enter if</code>, <code>consider</code>, its tasks, its transitions and its child states.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// ===== State tree =====
+
+Root
+    Idle  [Selection=TryEnterState]
+    Folder  [Type=Group]
+    PatrolLink  [Type=Linked -&gt; Shared, Selection=TryEnterState]
+    Off  [disabled]
+Shared  [Type=Subtree]
+
+// ===== States =====
+
+state Root
+
+    state Idle  [Selection=TryEnterState]
+        // Waits for the player
+        tag Golden.Idle
+        tick 0.5
+        enter on event Golden.Alert
+
+    state Folder  [Type=Group]</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="tasks-and-evaluators">Tasks and evaluators</h2>
+        <p>A state's tasks sit under one <code>run together</code> line: they start in the order listed and then run at the same time, not one after another. The line says what ends the state: <code>until one finishes</code>, <code>until all finish or one fails</code> (a state set to wait for all its tasks), or <code>none ends the state</code>. The global tasks' line says when the whole tree stops instead.</p>
+        <p>A task is <code>task Name: Struct</code>, or <code>task Struct</code> when it has no name; a Blueprint task shows its class. <code>[disabled]</code> marks a task that does not run, and <code>[background]</code> one whose end and failure the state ignores (a Debug Text task is, by default). Evaluators are <code>evaluator</code> lines in a section of their own. Under a node are the settings that differ from its default, sorted by name.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// ===== Evaluators =====
+
+evaluator Scout: BPE_Golden
+    Radius = 500.0
+
+// ===== Global tasks =====
+
+run together; the tree stops when one finishes
+    task Banner: StateTreeDebugTextTask  [background]
+        Text = running
+
+// ===== States =====
+
+state Root
+
+    state Idle
+        run together until all finish or one fails
+            task BPT_Golden
+                Speed = 2.0
+            task Spare: StateTreeDelayTask  [disabled]
+                Duration = 4.0</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="conditions">Conditions</h2>
+        <p>The conditions of a state or a transition are one expression, grouped the way the runtime evaluates them: left to right, with no precedence between And and Or, and the indents of the editor's list as brackets. Each pair is <code>AND(x, y)</code> or <code>OR(x, y)</code>. Each condition is a call, <code>Name(setting)</code>, with one setting bare and two or more as <code>Name=Value</code>.</p>
+        <p>A state's considerations are grouped the same way, as <code>consider</code>, with <code>MUL(x, y)</code> for Multiply; there <code>AND</code> takes the lower score and <code>OR</code> the higher.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>state Root
+    enter if AND(OR(AND(A(0.1), B(0.2)), C(0.3)), D(0.4))
+
+state Cheap
+    weight 2.0
+    consider StateTreeConstantConsideration(0.25)</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="transitions">Transitions</h2>
+        <p>A transition is <code>on trigger -&gt; target</code>. The triggers are <code>completed</code>, <code>succeeded</code>, <code>failed</code>, <code>tick</code>, <code>event Tag</code> and <code>delegate</code>. A target is the path of a state from its subtree's root, joined with <code>/</code>, or one of <code>succeeded</code>, <code>failed</code>, <code>parent</code>, <code>next</code>, <code>next selectable</code>, <code>next parent</code>, <code>next selectable parent</code> and <code>none</code>. In brackets: <code>priority</code> when it is not Normal, <code>reactivate</code> and <code>disabled</code>. Its conditions are the <code>if</code> line under it.</p>
+        <p>Transitions are written in the order the tree checks them: tick, event and delegate transitions first, then <code>completed</code>, <code>succeeded</code> and <code>failed</code>. A delayed transition has a <code>then wait</code> line: its condition is checked once, when the wait starts. A completion transition is taken at once at normal priority, so a priority or delay saved on one is marked <code>(ignored)</code>.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>on event Golden.Alert -&gt; next  [priority=High]
+    if StateTreeRandomCondition(0.25)
+    then wait 1.0 +/- 0.5
+on tick -&gt; parent
+on completed -&gt; Root/Idle  [disabled]
+on completed -&gt; Shared/Step  [priority=High (ignored), delay=2.0 (ignored)]</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="parameters">Parameters</h2>
+        <p>The tree's parameters are a section of their own before the evaluators, one <code>type name = value</code> line each, sorted by name. A state's parameters are <code>parameter</code> lines under it; a value a linked state overrides ends <code>[override]</code>. An asset saved by UE 5.4 names the tree's parameters <code>RootParameters</code>, and the text keeps that name.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// ===== Parameters =====
+
+bool Alert = True
+float Speed = 300.0
+Actor* Target = None
+Array&lt;int&gt; Waypoints = [1,2,3]
+
+state PatrolLink  [Type=Linked -&gt; Shared]
+    parameter int Count = 7  [override]
+    parameter string Label = patrol</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="bindings">Bindings</h2>
+        <p>A bound property is written as <code>Member &lt;- Source</code> in place of its value, and an output binding as <code>Member -&gt; Target</code>. A path starts with <code>Parameters</code>, a node's name, or the schema's context data such as <code>Actor</code>, then the property names joined with <code>.</code>. A property bound to a function is a call to it. A binding whose target the asset no longer holds is listed under <code>Unresolved bindings</code>, and a source it no longer holds is <code>&lt;unresolved&gt;</code>.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>task Wait: StateTreeDelayTask
+    Duration &lt;- Parameters.Speed
+task Poll: StateTreeDelayTask
+    Duration &lt;- Scout.Distance
+task StateTreeDebugTextTask  [background]
+    ReferenceActor &lt;- Actor
+task Spare: StateTreeDelayTask
+    RandomDeviation &lt;- StateTreeMultiplyFloatPropertyFunction(Left=2.0, Right=3.0)</pre>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="colors">Colors</h2>
+        <p>The state colors the asset defines are a section after the states, <code>color Name = (R=..,G=..,B=..,A=..)</code>, sorted by name.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>// ===== Colors =====
+
+color Danger = (R=1.0,G=0.0,B=0.0,A=1.0)</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>

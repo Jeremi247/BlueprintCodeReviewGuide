@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>String tables · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>String tables</h1>
+      <p class="lede">A String Table asset is written as its namespace and its entries, under the same header as a Blueprint's.</p>
+    </header>
+
+    <div class="case">
+      <div class="about">
+        <h2 id="entries">Entries</h2>
+        <p>Each entry is <code>"key" = "text"</code>, sorted by key, not in the order the asset saved them. Keys and texts are quoted as a string literal is, so a line break in a text is <code>\n</code>.</p>
+        <p>An entry's developer note is the line <code>note "..."</code> under it, and its metadata is one <code>Name = "value"</code> line per item, sorted by name. Assets saved by an engine without developer notes, 4.27 among them, have none.</p>
+      </div>
+      <div class="example">
+        <pre class="code" data-hl>string table ST_Golden
+namespace "Golden"
+
+"Farewell" = "Goodbye"
+"Game Over" = "Try again"
+    Comment = "Shown on death"
+    Speaker = "Narrator"
+"Greeting" = "Hello"
+    note "Shown on the title screen"
+    Comment = "Used by the HUD"</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>

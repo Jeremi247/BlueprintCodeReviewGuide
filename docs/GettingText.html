@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting the text · Blueprint Pseudocode Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="Guide.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Guide pages"></nav>
+  <main class="page">
+    <header class="top">
+      <a class="eyebrow" href="Guide.html">BlueprintPseudocode guide</a>
+      <h1>Getting the text</h1>
+      <p class="lede">Three ways to get the text, from a quick review to a whole-folder sweep. All of them run on your machine.</p>
+    </header>
+
+    <div class="steps one">
+    <div class="step">
+<h2 id="plugin-folder">Where the plugin is</h2>
+<p>The steps below name files in the plugin's folder, the one that holds <code>BlueprintPseudocode.uplugin</code>. In a project it is <code>Plugins\BlueprintPseudocode\</code>. Installed from Fab, it is a folder under the engine's <code>Engine\Plugins\Marketplace\</code> with a generated name: look for the one that holds <code>BlueprintPseudocode.uplugin</code>.</p>
+</div>
+    <div class="step">
+<h2 id="p4v">Diff in P4V with <span class="kbd">Ctrl</span>+<span class="kbd">D</span></h2>
+<p>One-time setup in P4V: Edit › Preferences › Diff, under "Specify diff application by extension" click Add, and set Extension to <code>.uasset</code>. The other two fields depend on whether the path of the <a href="#plugin-folder">plugin folder</a> has a space in it.</p>
+<h3>No space in the plugin folder's path</h3>
+<ol>
+<li>Application: the <code>pythonw.exe</code> that ships with your engine, e.g. <code>C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\pythonw.exe</code> (spaces are fine here)</li>
+<li>Arguments: <code>&lt;plugin folder&gt;\Tools\BlueprintReader.py -Diff %1 %2</code>, with no quotes</li>
+</ol>
+<h3>A space in the plugin folder's path - Workaround</h3>
+<p>A Fab install under <code>C:\Program Files</code> has one. P4V cannot pass such a path to Python, so a batch file you create does:</p>
+<ol>
+<li>Create a text file named <code>BlueprintDiff.bat</code>, e.g. in <code>C:\Tools</code>, holding this one line, with your engine's <code>python.exe</code> and your plugin folder in place of the two paths:
+<pre class="code wrap">@"C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe" "&lt;plugin folder&gt;\Tools\BlueprintReader.py" -Diff %* || pause</pre></li>
+<li>Application: <code>C:\Tools\BlueprintDiff.bat</code></li>
+<li>Arguments: <code>%1 %2</code></li>
+</ol>
+<p class="note">If a path in the batch file is wrong, its window stays open with the error.</p>
+<p>Then Ctrl+D on a changed Blueprint opens both revisions in P4Merge as text. Unreal does not need to be running, but the engine must be installed. Assets that are not a Blueprint, string table or StateTree show a message instead.</p>
+<p class="note">The Python does not have to be the engine's. If you have your own, any 64-bit Python 3.7 or later works, e.g. one from python.org: put its <code>pythonw.exe</code> in Application, or its <code>python.exe</code> in the batch file. A 32-bit Python cannot load the plugin.</p>
+</div>
+    <div class="step">
+<h2 id="editor">In the editor</h2>
+<p>Right-click one or more Blueprints, string tables or StateTrees › <strong>Pseudocode</strong>:</p>
+<ol>
+<li><strong>Export to File</strong>: writes to <code>Saved/BlueprintPseudocode</code> and opens the file, or the folder for several</li>
+<li><strong>Copy to Clipboard</strong></li>
+<li><strong>Diff Against Depot</strong>: one asset, your local version against the latest depot revision; needs source control connected</li>
+</ol>
+<p>In Unreal's own Blueprint Diff window, or a StateTree's diff window in UE5 (for example from Source Control › History), click <strong>Pseudocode Diff</strong> next to Prev and Next to open the same two revisions as text in your diff tool.</p>
+<p>All of these read the saved file. If a Blueprint has unsaved changes, you are asked once: <strong>Yes</strong> saves and converts, <strong>No</strong> converts the saved file and notes at the top that unsaved changes are not included, <strong>Cancel</strong> stops. A Blueprint that was never saved is skipped.</p>
+</div>
+    <div class="step">
+<h2 id="command-line">Command line</h2>
+<p>For whole folders, e.g. to grep across many Blueprints, without starting Unreal:</p>
+<pre class="code" data-hl>"C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe"
+  "&lt;plugin folder&gt;\Tools\BlueprintReader.py"
+  D:\MyProject\Content\Gameplay -OutDir=D:\BPText</pre>
+<p class="note">Use the engine's <code>python.exe</code>, beside the <code>pythonw.exe</code> above, or any 64-bit Python 3.7 or later. It takes files and folders, searches folders recursively and skips what is not a Blueprint, string table or StateTree. Add <code>-Engine=</code> and <code>-Project=</code> when the engine and project are not found above the files.</p>
+<p>The commandlet exports from the editor instead, as it loads each asset:</p>
+<pre class="code" data-hl>UnrealEditor-Cmd.exe MyProject.uproject
+  -run=BlueprintPseudocode
+  -Paths=/Game/Gameplay
+  -Out=D:\BPText</pre>
+<p class="note">Use <code>-Assets=/Game/X/BP_A,/Game/Y/BP_B</code> for single assets. On 4.27 the editor is <code>UE4Editor-Cmd.exe</code>. The loaded asset already has the engine's renames applied, so its text has no <code>redirect</code> lines.</p>
+</div>
+    </div>
+
+    <section class="group">
+      <div class="group-head">
+        <h2 id="web-reviews">Code reviews in web tools</h2>
+        <p>P4 Code Review (Swarm) can show Blueprint pseudocode with a module the plugin ships: see <a href="SwarmSetup.html">Swarm setup</a>. GitHub, GitLab and other web tools can't, since they cannot run the plugin on their server. For those, diff the Blueprints locally and comment in the review as usual:</p>
+      </div>
+      <div class="steps one">
+<div class="step">
+<ol>
+<li>Open the review's changelist or shelf in P4V</li>
+<li>Press <span class="kbd">Ctrl</span>+<span class="kbd">D</span> on each Blueprint, or use Diff Against Depot in the editor</li>
+<li>Leave your comments in the review</li>
+</ol>
+</div>
+</div>
+    </section>
+
+  </main>
+</div>
+<script src="Guide.js"></script>
+</body>
+</html>
