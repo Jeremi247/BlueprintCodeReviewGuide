@@ -9,7 +9,8 @@
     { group: '', pages: [['Guide.html', 'Overview']] },
     { group: 'Using the plugin', pages: [
       ['GettingText.html', 'Getting the text'],
-      ['SwarmSetup.html', 'Swarm setup']] },
+      ['SwarmSetup.html', 'Swarm setup'],
+      ['TextFormat.html', 'Text format']] },
     { group: 'Reading a Blueprint', pages: [
       ['FileLayout.html', 'File layout'],
       ['Declarations.html', 'Variables and components'],

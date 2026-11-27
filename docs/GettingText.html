@@ -23,6 +23,7 @@
     <div class="step">
 <h2 id="plugin-folder">Where the plugin is</h2>
 <p>The steps below name files in the plugin's folder, the one that holds <code>BlueprintPseudocode.uplugin</code>. In a project it is <code>Plugins\BlueprintPseudocode\</code>. Installed from Fab, it is a folder under the engine's <code>Engine\Plugins\Marketplace\</code> with a generated name: look for the one that holds <code>BlueprintPseudocode.uplugin</code>.</p>
+<p>Installed from Fab, the plugin is on in every project of that engine, and the project's files are not changed. To turn it off in one project, untick it in <strong>Edit › Plugins</strong>, which writes that into the project's <code>.uproject</code>.</p>
 </div>
     <div class="step">
 <h2 id="p4v">Diff in P4V with <span class="kbd">Ctrl</span>+<span class="kbd">D</span></h2>
@@ -52,7 +53,7 @@
 <li><strong>Copy to Clipboard</strong></li>
 <li><strong>Diff Against Depot</strong>: one asset, your local version against the latest depot revision; needs source control connected</li>
 </ol>
-<p>In Unreal's own Blueprint Diff window, or a StateTree's diff window in UE5 (for example from Source Control › History), click <strong>Pseudocode Diff</strong> next to Prev and Next to open the same two revisions as text in your diff tool.</p>
+<p>In Unreal's own Blueprint Diff window, or a StateTree's diff window in UE5 (for example from Source Control › History), click <strong>Pseudocode Diff</strong> next to Prev and Next to open the same two revisions as text in your diff tool. A string table has no diff window: Unreal's own diffs of one, such as Diff Against Previous Revision in Source Control › History, open its text in your diff tool straight away.</p>
 <p>All of these read the saved file. If a Blueprint has unsaved changes, you are asked once: <strong>Yes</strong> saves and converts, <strong>No</strong> converts the saved file and notes at the top that unsaved changes are not included, <strong>Cancel</strong> stops. A Blueprint that was never saved is skipped.</p>
 </div>
     <div class="step">

@@ -23,7 +23,7 @@
       <div class="about">
         <h2 id="entries">Entries</h2>
         <p>Each entry is <code>"key" = "text"</code>, sorted by key, not in the order the asset saved them. Keys and texts are quoted as a string literal is, so a line break in a text is <code>\n</code>.</p>
-        <p>An entry's developer note is the line <code>note "..."</code> under it, and its metadata is one <code>Name = "value"</code> line per item, sorted by name. Assets saved by an engine without developer notes, 4.27 among them, have none.</p>
+        <p>An entry's developer note is the line <code>note "..."</code> under it, and its metadata is one <code>Name = "value"</code> line per item, sorted by name. An item with an empty value, such as a cleared comment, has no line. Assets saved by an engine without developer notes, 4.27 among them, have none.</p>
       </div>
       <div class="example">
         <pre class="code" data-hl>string table ST_Golden
