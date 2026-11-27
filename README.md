@@ -2,6 +2,8 @@
 
 The guide and issue tracker for **Blueprint Pseudocode**, an Unreal Engine plugin that turns Blueprints, string tables and StateTrees into text you can review and diff: in P4V, in P4 Code Review (Swarm), or exported from the editor.
 
+**[Get it on Fab](https://www.fab.com/listings/9716c2f7-67ba-416a-8d0a-b708323d7c8e)**, for Unreal Engine 4.27 and 5.8 on Windows.
+
 **[Read the guide](https://jeremi247.github.io/BlueprintCodeReviewGuide/)**: how to get the text, and how each kind of node reads. The same guide ships with the plugin, as `Docs/Guide.html` in its folder.
 
 ## Report a bug or request a feature

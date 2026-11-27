@@ -45,6 +45,7 @@ body:
         - "Editor: Export to File or Copy to Clipboard"
         - "Editor: Diff Against Depot"
         - "Editor: Pseudocode Diff in a diff window"
+        - "Editor: a string table's diff from Source Control"
         - Command line (BlueprintReader.py)
         - Commandlet (-run=BlueprintPseudocode)
         - P4 Code Review (Swarm)
