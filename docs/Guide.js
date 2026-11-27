@@ -1,7 +1,10 @@
 // Copyright 2026 Jeremiasz Kacprzak. All Rights Reserved.
-// Every guide page's shell: the sidebar of pages with this page's sections, the previous and next links,
-// and the colors of the pseudocode blocks. A new page is added to PAGES and to the topics on Guide.html.
+// Every guide page's shell: the plugin version over the title, the sidebar of pages with this page's sections and the
+// issues link, the previous and next links, and the colors of the pseudocode blocks. A new page is added to PAGES and
+// to the topics on Guide.html.
 (function () {
+  // The .uplugin's VersionName; FabZip.ps1 and PublishGuide.ps1 refuse a guide whose VERSION differs.
+  var VERSION = '1.0';
   var PAGES = [
     { group: '', pages: [['Guide.html', 'Overview']] },
     { group: 'Using the plugin', pages: [
@@ -22,8 +25,12 @@
       ['StringTables.html', 'String tables'],
       ['StateTrees.html', 'State Trees']] }
   ];
+  var ISSUES = 'https://github.com/Jeremi247/BlueprintCodeReviewGuide/issues/new/choose';
 
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  var eyebrow = document.querySelector('header.top .eyebrow');
+  if (eyebrow) eyebrow.textContent = 'BlueprintPseudocode v' + VERSION + ' guide';
 
   var here = (decodeURIComponent(location.pathname.split('/').pop()) || 'Guide.html').toLowerCase();
   var flat = [], at = -1;
@@ -51,6 +58,7 @@
       });
       h += '</ul>';
     });
+    h += '<div class="side-group">Feedback</div><ul><li><a class="page-link" href="' + ISSUES + '">Report a bug or request a feature</a></li></ul>';
     side.innerHTML = h + '</details>';
 
     // Wide, the list is always open and its toggle hidden; narrow, it folds above the page.
